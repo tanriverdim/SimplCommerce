@@ -2,9 +2,8 @@
 (function () {
     angular
         .module('simplAdmin.catalog')
-        .controller('ProductAttributeFormCtrl', ProductAttributeFormCtrl);
+        .controller('ProductAttributeFormCtrl', ['$state', '$stateParams', 'productAttributeGroupService', 'productAttributeService', 'translateService', ProductAttributeFormCtrl]);
 
-    /* @ngInject */
     function ProductAttributeFormCtrl($state, $stateParams, productAttributeGroupService, productAttributeService, translateService) {
         var vm = this;
         vm.translate = translateService;
@@ -47,7 +46,7 @@
         function getProductAttributeGroups() {
             productAttributeGroupService.getProductAttributeGroups().then(function (result) {
                 vm.productAttributeGroups = result.data;
-            })
+            });
         }
 
         function init() {

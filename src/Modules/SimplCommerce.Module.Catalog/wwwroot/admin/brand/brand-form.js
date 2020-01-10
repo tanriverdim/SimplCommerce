@@ -2,15 +2,18 @@
 (function () {
     angular
         .module('simplAdmin.catalog')
-        .controller('BrandFormCtrl', BrandFormCtrl);
+        .controller('BrandFormCtrl', ['$state', '$stateParams', 'brandService', 'translateService', BrandFormCtrl]);
 
-    /* @ngInject */
     function BrandFormCtrl($state, $stateParams, brandService, translateService) {
         var vm = this;
         vm.translate = translateService;
-        vm.brand = {};
+        vm.brand = { isPublished: true };
         vm.brandId = $stateParams.id;
         vm.isEditMode = vm.brandId > 0;
+
+        vm.updateSlug = function () {
+            vm.brand.slug = slugify(vm.brand.name);
+        };
 
         vm.save = function save() {
             var promise;
@@ -28,8 +31,9 @@
                     var error = response.data;
                     vm.validationErrors = [];
                     if (error && angular.isObject(error)) {
-                        for (var key in error) {
-                            vm.validationErrors.push(error[key][0]);
+                        var errors = error.errors ? error.errors : error;
+                        for (var key in errors) {
+                            vm.validationErrors.push(errors[key][0]);
                         }
                     } else {
                         vm.validationErrors.push('Could not add brand.');

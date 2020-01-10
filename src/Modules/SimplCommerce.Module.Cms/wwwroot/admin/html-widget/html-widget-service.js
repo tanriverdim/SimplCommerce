@@ -2,15 +2,15 @@
 (function () {
     angular
         .module('simplAdmin.cms')
-        .factory('htmlWidgetService', widgetService);
+        .factory('htmlWidgetService', ['$http', widgetService]);
 
-    /* @ngInject */
     function widgetService($http) {
         var service = {
             getWidgetZones: getWidgetZones,
             getHtmlWidget: getHtmlWidget,
             createHtmlWidget: createHtmlWidget,
-            editHtmlWidget: editHtmlWidget
+            editHtmlWidget: editHtmlWidget,
+            getNumberOfWidgets: getNumberOfWidgets
         };
         return service;
 
@@ -28,6 +28,10 @@
 
         function editHtmlWidget(widgetInstance) {
             return $http.put('api/html-widgets/' + widgetInstance.id, widgetInstance);
+        }
+
+        function getNumberOfWidgets() {
+            return $http.get('api/widget-instances/number-of-widgets');
         }
     }
 })();

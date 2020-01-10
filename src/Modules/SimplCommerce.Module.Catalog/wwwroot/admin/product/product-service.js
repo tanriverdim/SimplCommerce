@@ -2,11 +2,11 @@
 (function () {
     angular
         .module('simplAdmin.catalog')
-        .factory('productService', productService);
+        .factory('productService', ['$http', 'Upload', productService]);
 
-    /* @ngInject */
     function productService($http, Upload) {
         var service = {
+            quickSearchProducts: quickSearchProducts,
             getProducts: getProducts,
             createProduct: createProduct,
             editProduct: editProduct,
@@ -16,9 +16,17 @@
             getProductOptions: getProductOptions,
             getProduct: getProduct,
             changeStatus: changeStatus,
-            deleteProduct: deleteProduct
+            deleteProduct: deleteProduct,
+            getTaxClasses: getTaxClasses,
+            getDefaultTaxClass: getDefaultTaxClass,
+            getProductTranslation: getProductTranslation,
+            editProductTranslation: editProductTranslation
         };
         return service;
+
+        function quickSearchProducts(name) {
+            return $http.get('api/products/quick-search?name=' + name);
+        }
 
         function getProduct(id) {
             return $http.get('api/products/' + id);
@@ -75,6 +83,22 @@
 
         function deleteProduct(product) {
             return $http.delete('api/products/' + product.id, null);
+        }
+
+        function getTaxClasses() {
+            return $http.get('api/tax-classes');
+        }
+
+        function getDefaultTaxClass() {
+            return $http.get('api/tax-classes/default');
+        }
+
+        function getProductTranslation(id, culture) {
+            return $http.get('api/product-translations/' + id + '?culture=' + culture);
+        }
+
+        function editProductTranslation(id, culture, model) {
+            return $http.put('api/product-translations/' + id + '?culture=' + culture, model);
         }
     }
 })();

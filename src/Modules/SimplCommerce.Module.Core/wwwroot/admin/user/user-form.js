@@ -2,15 +2,15 @@
 (function () {
     angular
         .module('simplAdmin.core')
-        .controller('UserFormCtrl', UserFormCtrl);
+        .controller('UserFormCtrl', ['$state', '$stateParams', 'userService', 'translateService', UserFormCtrl]);
 
-    /* @ngInject */
     function UserFormCtrl($state, $stateParams, userService, translateService) {
         var vm = this;
         vm.translate = translateService;
-        vm.user = { roleIds: [] };
+        vm.user = { roleIds: [], customerGroupIds: [] };
         vm.vendors = [];
         vm.roles = [];
+        vm.customerGroups = [];
         vm.userId = $stateParams.id;
         vm.isEditMode = vm.userId > 0;
 
@@ -20,6 +20,15 @@
                 vm.user.roleIds.splice(index, 1);
             } else {
                 vm.user.roleIds.push(roleId);
+            }
+        };
+
+        vm.toggleCustomerGroups = function toggleCustomerGroups(customergroupId) {
+            var index = vm.user.customerGroupIds.indexOf(customergroupId);
+            if (index > -1) {
+                vm.user.customerGroupIds.splice(index, 1);
+            } else {
+                vm.user.customerGroupIds.push(customergroupId);
             }
         };
 
@@ -60,6 +69,12 @@
             });
         }
 
+        function getCustomerGroups() {
+            userService.getCustomerGroups().then(function (result) {
+                vm.customerGroups = result.data;
+            });
+        }
+
         function init() {
             if (vm.isEditMode) {
                 userService.getUser(vm.userId).then(function (result) {
@@ -69,6 +84,7 @@
 
             getVendors();
             getRoles();
+            getCustomerGroups();
         }
 
         init();

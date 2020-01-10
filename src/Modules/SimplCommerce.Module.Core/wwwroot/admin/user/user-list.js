@@ -2,20 +2,22 @@
 (function () {
     angular
         .module('simplAdmin.core')
-        .controller('UserListCtrl', UserListCtrl);
+        .controller('UserListCtrl', ['userService', 'translateService', UserListCtrl]);
 
-    /* @ngInject */
     function UserListCtrl(userService, translateService) {
-        var vm = this,
-            tableStateRef;
+        var vm = this;
+        vm.tableStateRef = {};
         vm.users = [];
+        vm.roles = [];
+        vm.customerGroups = [];
         vm.translate = translateService;
 
         vm.getUsers = function getUsers(tableState) {
-            tableStateRef = tableState;
+            vm.tableStateRef = tableState;
             vm.isLoading = true;
             userService.getUsers(tableState).then(function (result) {
                 vm.users = result.data.items;
+                tableState.pagination.totalItemCount = result.data.totalRecord;
                 tableState.pagination.numberOfPages = result.data.numberOfPages;
                 vm.isLoading = false;
             });
@@ -26,7 +28,7 @@
                 if (result) {
                     userService.deleteUser(user)
                         .then(function (result) {
-                            vm.getUsers(tableStateRef);
+                            vm.getUsers(vm.tableStateRef);
                             toastr.success(user.fullName + ' has been deleted');
                         })
                         .catch(function (response) {
@@ -35,5 +37,17 @@
                 }
             });
         };
+
+        function init() {
+            userService.getRoles().then(function (result) {
+                vm.roles = result.data;
+            });
+
+            userService.getCustomerGroups().then(function (result) {
+                vm.getCustomerGroups = result.data;
+            });
+        }
+
+        init();
     }
 })();

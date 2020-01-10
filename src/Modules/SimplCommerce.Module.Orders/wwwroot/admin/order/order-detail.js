@@ -2,23 +2,23 @@
 (function () {
     angular
         .module('simplAdmin.orders')
-        .controller('OrderDetailCtrl', OrderDetailCtrl);
+        .controller('OrderDetailCtrl', ['$stateParams', 'orderService', 'translateService', OrderDetailCtrl]);
 
-    /* @ngInject */
-    function OrderDetailCtrl($state, $stateParams, orderService, translateService) {
+    function OrderDetailCtrl($stateParams, orderService, translateService) {
         var vm = this;
         vm.translate = translateService;
         vm.orderId = $stateParams.id;
         vm.order = {};
         vm.orderStatus = [];
-        vm.isStatusFormOpen = false;
+        vm.orderHistories = [];
 
         vm.changeOrderStatus = function () {
-            orderService.changeOrderStatus(vm.order.id, vm.order.orderStatus)
+            orderService.changeOrderStatus(vm.order.id, { statusId : vm.order.orderStatus, note : vm.orderStatusNote })
                 .then(function () {
-                    vm.isStatusFormOpen = false;
                     vm.order.orderStatusString = vm.orderStatus.find(function (item) { return item.id === vm.order.orderStatus; }).name;
                     toastr.success('The order now is ' + vm.order.orderStatusString);
+                    vm.orderStatusNote = '';
+                    getOrderHistory();
                 })
                 .catch(function (response) {
                     toastr.error(response.data.error);
@@ -37,9 +37,16 @@
             });
         }
 
+        function getOrderHistory() {
+            orderService.getOrderHistory(vm.orderId).then(function (result) {
+                vm.orderHistories = result.data;
+            });
+        }
+
         function init() {
             getOrderStatus();
             getOrder();
+            getOrderHistory();
         }
 
         init();

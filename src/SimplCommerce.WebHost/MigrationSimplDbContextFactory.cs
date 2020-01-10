@@ -1,18 +1,17 @@
 ﻿using System;
 using System.IO;
-using Autofac;
-using Autofac.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore.Design;
 using SimplCommerce.Module.Core.Data;
 using SimplCommerce.WebHost.Extensions;
+using SimplCommerce.Infrastructure;
 
 namespace SimplCommerce.WebHost
 {
-    public class MigrationSimplDbContextFactory : IDbContextFactory<SimplDbContext>
+    public class MigrationSimplDbContextFactory : IDesignTimeDbContextFactory<SimplDbContext>
     {
-        public SimplDbContext Create(string[] args)
+        public SimplDbContext CreateDbContext(string[] args)
         {
             var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
@@ -23,17 +22,16 @@ namespace SimplCommerce.WebHost
                             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                             .AddJsonFile($"appsettings.{environmentName}.json", true);
 
+            builder.AddUserSecrets(typeof(MigrationSimplDbContextFactory).Assembly, optional: true);
             builder.AddEnvironmentVariables();
             var _configuration = builder.Build();
 
             //setup DI
-            var containerBuilder = new ContainerBuilder();
             IServiceCollection services = new ServiceCollection();
-
-            services.LoadInstalledModules(contentRootPath);
+            GlobalConfiguration.ContentRootPath = contentRootPath;
+            services.AddModules(contentRootPath);
             services.AddCustomizedDataStore(_configuration);
-            containerBuilder.Populate(services);
-            var _serviceProvider = containerBuilder.Build().Resolve<IServiceProvider>();
+            var _serviceProvider = services.BuildServiceProvider();
 
             return _serviceProvider.GetRequiredService<SimplDbContext>();
         }

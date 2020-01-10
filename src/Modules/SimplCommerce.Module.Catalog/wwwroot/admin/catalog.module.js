@@ -35,6 +35,11 @@
                    templateUrl: 'modules/catalog/admin/category/category-form.html',
                    controller: 'CategoryFormCtrl as vm'
                })
+                .state('category-translation', {
+                    url: '/category-translation/:id/:culture',
+                    templateUrl: 'modules/catalog/admin/category/category-translation-form.html',
+                    controller: 'CategoryTranslationFormCtrl as vm'
+                })
                 .state('product-option', {
                     url: '/product-option',
                     templateUrl: 'modules/catalog/admin/product-option/product-option-list.html',
@@ -110,6 +115,11 @@
                     templateUrl: 'modules/catalog/admin/product/product-form.html',
                     controller: 'ProductFormCtrl as vm'
                 })
+                .state('product-translation', {
+                    url: '/product-translation/:id/:culture',
+                    templateUrl: 'modules/catalog/admin/product/product-translation-form.html',
+                    controller: 'ProductTranslationFormCtrl as vm'
+                })
                 .state('widget-product-create', {
                     url: '/widget-product/create',
                     templateUrl: 'modules/catalog/admin/product-widget/product-widget-form.html',
@@ -129,6 +139,26 @@
                     url: '/widget-category/edit/:id',
                     templateUrl: 'modules/catalog/admin/category-widget/category-widget-form.html',
                     controller: 'CategoryWidgetFormCtrl as vm'
+                })
+                .state('widget-simple-product-create', {
+                    url: '/widget-simple-product/create',
+                    templateUrl: 'modules/catalog/admin/simple-product-widget/simple-product-widget-form.html',
+                    controller: 'SimpleProductWidgetFormCtrl as vm'
+                })
+                .state('widget-simple-product-edit', {
+                    url: '/widget-simple-product/edit/:id',
+                    templateUrl: 'modules/catalog/admin/simple-product-widget/simple-product-widget-form.html',
+                    controller: 'SimpleProductWidgetFormCtrl as vm'
+                })
+                .state('product-prices', {
+                    url: '/product-prices',
+                    templateUrl: 'modules/catalog/admin/product-price/product-price-form.html',
+                    controller: 'ProductPriceFormCtrl as vm'
+                })
+                .state('product-clone', {
+                    url: '/product-clone/:id',
+                    templateUrl: 'modules/catalog/admin/product-clone/product-clone-form.html',
+                    controller: 'ProductCloneFormCtrl as vm'
                 });
         }]);
 })();

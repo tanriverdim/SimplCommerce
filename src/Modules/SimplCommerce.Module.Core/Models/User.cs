@@ -1,20 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 using SimplCommerce.Infrastructure.Models;
 
 namespace SimplCommerce.Module.Core.Models
 {
-    public class User : IdentityUser<long, IdentityUserClaim<long>, UserRole, IdentityUserLogin<long>, IdentityUserToken<long>>, IEntityWithTypedId<long>
+    public class User : IdentityUser<long>, IEntityWithTypedId<long>, IExtendableObject
     {
         public User()
         {
             CreatedOn = DateTimeOffset.Now;
-            UpdatedOn = DateTimeOffset.Now;
+            LatestUpdatedOn = DateTimeOffset.Now;
         }
+
+        public const string SettingsDataKey = "Settings";
 
         public Guid UserGuid { get; set; }
 
+        [Required(ErrorMessage = "The {0} field is required.")]
+        [StringLength(450)]
         public string FullName { get; set; }
 
         public long? VendorId { get; set; }
@@ -23,7 +28,7 @@ namespace SimplCommerce.Module.Core.Models
 
         public DateTimeOffset CreatedOn { get; set; }
 
-        public DateTimeOffset UpdatedOn { get; set; }
+        public DateTimeOffset LatestUpdatedOn { get; set; }
 
         public IList<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();
 
@@ -34,5 +39,18 @@ namespace SimplCommerce.Module.Core.Models
         public UserAddress DefaultBillingAddress { get; set; }
 
         public long? DefaultBillingAddressId { get; set; }
+
+        [StringLength(450)]
+        public string RefreshTokenHash { get; set; }
+
+        public IList<UserRole> Roles { get; set; } = new List<UserRole>();
+
+        public IList<CustomerGroupUser> CustomerGroups { get; set; } = new List<CustomerGroupUser>();
+
+        [StringLength(450)]
+        public string Culture { get; set; }
+
+        /// <inheritdoc />
+        public string ExtensionData { get; set; }
     }
 }

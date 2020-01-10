@@ -2,9 +2,8 @@
 (function ($) {
     angular
         .module('simplAdmin.cms')
-        .controller('PageFormCtrl', PageFormCtrl);
+        .controller('PageFormCtrl', ['$state', '$stateParams', 'summerNoteService', 'pageService', 'translateService', PageFormCtrl]);
 
-    /* @ngInject */
     function PageFormCtrl($state, $stateParams, summerNoteService, pageService, translateService) {
         var vm = this;
         vm.translate = translateService;
@@ -17,6 +16,10 @@
                 .then(function (response) {
                     $(vm.body).summernote('insertImage', response.data);
                 });
+        };
+
+        vm.updateSlug = function () {
+            vm.page.slug = slugify(vm.page.name);
         };
 
         vm.save = function save() {
@@ -39,7 +42,7 @@
                             vm.validationErrors.push(error[key][0]);
                         }
                     } else {
-                        vm.validationErrors.push('Could not add page.');
+                        vm.validationErrors.push('Could not add or update page.');
                     }
                 });
         };

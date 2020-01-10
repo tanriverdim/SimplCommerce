@@ -1,27 +1,49 @@
-FROM simplcommerce/simpl-sdk
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-env
   
-ARG source=.
 WORKDIR /app
-COPY $source .
+COPY . ./
 
-RUN sed -i 's#<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.0.0-preview1-final" />#<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.0.0-preview1" />#' src/SimplCommerce.WebHost/SimplCommerce.WebHost.csproj
-
-RUN sed -i 's/UseSqlServer/UseNpgsql/' src/SimplCommerce.WebHost/Startup.cs
+RUN sed -i 's#<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.0" />#<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.0" />#' src/SimplCommerce.WebHost/SimplCommerce.WebHost.csproj
+RUN sed -i 's/UseSqlServer/UseNpgsql/' src/SimplCommerce.WebHost/Program.cs
 RUN sed -i 's/UseSqlServer/UseNpgsql/' src/SimplCommerce.WebHost/Extensions/ServiceCollectionExtensions.cs
 
-RUN cd src/SimplCommerce.WebHost && rm Migrations/* && cp -f appsettings.docker.json appsettings.json
+RUN rm src/SimplCommerce.WebHost/Migrations/* && cp -f src/SimplCommerce.WebHost/appsettings.docker.json src/SimplCommerce.WebHost/appsettings.json
 
-RUN dotnet restore && dotnet build
+RUN dotnet tool install --global dotnet-ef --version 3.1.0
+ENV PATH="${PATH}:/root/.dotnet/tools"
 
-RUN cd src/SimplCommerce.WebHost && npm install && gulp copy-modules
+# ef core migrations run in debug, so we have to build in Debug for copying module correctly 
+RUN dotnet restore && dotnet build \
+    && cd src/SimplCommerce.WebHost \
+	&& dotnet ef migrations add initialSchema \
+    && dotnet ef migrations script -o dbscript.sql
 
-RUN cd src/SimplCommerce.WebHost && dotnet ef migrations add initialSchema
+RUN dotnet build -c Release \
+	&& cd src/SimplCommerce.WebHost \
+    && dotnet build -c Release \
+	&& dotnet publish -c Release -o out
 
-# Don't know why ef migration tool add this.
-RUN sed -i '/using SimplCommerce.Module.*.Models;/d' src/SimplCommerce.WebHost/Migrations/SimplDbContextModelSnapshot.cs
-RUN sed -i '/using SimplCommerce.Module.*.Models;/d' src/SimplCommerce.WebHost/Migrations/*_initialSchema.Designer.cs
+# remove BOM for psql	
+RUN sed -i -e '1s/^\xEF\xBB\xBF//' /app/src/SimplCommerce.WebHost/dbscript.sql
 
-COPY docker-entrypoint.sh /
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
+
+# hack to make postgresql-client install work on slim
+RUN mkdir -p /usr/share/man/man1 \
+    && mkdir -p /usr/share/man/man7
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends postgresql-client \
+	&& apt-get install libgdiplus -y \
+	&& rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app	
+COPY --from=build-env /app/src/SimplCommerce.WebHost/out ./
+COPY --from=build-env /app/src/SimplCommerce.WebHost/dbscript.sql ./
+
+RUN curl -SL "https://github.com/rdvojmoc/DinkToPdf/raw/v1.0.8/v0.12.4/64%20bit/libwkhtmltox.so" --output ./libwkhtmltox.so
+
+COPY --from=build-env /app/docker-entrypoint.sh /
 RUN chmod 755 /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

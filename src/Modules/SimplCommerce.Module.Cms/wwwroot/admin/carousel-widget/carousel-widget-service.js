@@ -2,15 +2,15 @@
 (function () {
     angular
         .module('simplAdmin.cms')
-        .factory('carouselWidgetService', widgetService);
+        .factory('carouselWidgetService', ['$http', 'Upload', widgetService]);
 
-    /* @ngInject */
     function widgetService($http, Upload) {
         var service = {
             getWidgetZones: getWidgetZones,
             getCarouselWidget: getCarouselWidget,
             createCarouselWidget: createCarouselWidget,
-            editCarouselWidget: editCarouselWidget
+            editCarouselWidget: editCarouselWidget,
+            getNumberOfWidgets: getNumberOfWidgets
         };
         return service;
 
@@ -37,6 +37,10 @@
                 data: widgetInstance,
                 method: 'PUT'
             });
+        }
+
+        function getNumberOfWidgets() {
+            return $http.get('api/widget-instances/number-of-widgets');
         }
     }
 })();

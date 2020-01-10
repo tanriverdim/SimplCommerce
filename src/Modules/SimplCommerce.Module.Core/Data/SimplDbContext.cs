@@ -2,8 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SimplCommerce.Infrastructure;
 using SimplCommerce.Infrastructure.Data;
 using SimplCommerce.Infrastructure.Models;
@@ -15,6 +19,18 @@ namespace SimplCommerce.Module.Core.Data
     {
         public SimplDbContext(DbContextOptions options) : base(options)
         {
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            ValidateEntities();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            ValidateEntities();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,6 +48,52 @@ namespace SimplCommerce.Module.Core.Data
             base.OnModelCreating(modelBuilder);
 
             RegisterCustomMappings(modelBuilder, typeToRegisters);
+
+            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                // SQLite does not have proper support for DateTimeOffset via Entity Framework Core, see the limitations
+                // here: https://docs.microsoft.com/en-us/ef/core/providers/sqlite/limitations#query-limitations
+                // To work around this, when the Sqlite database provider is used, all model properties of type DateTimeOffset
+
+                foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+                {
+                    var properties = entityType.ClrType.GetProperties().Where(p => p.PropertyType == typeof(DateTimeOffset) || p.PropertyType == typeof(DateTimeOffset?));
+                    foreach (var property in properties)
+                    {
+                        modelBuilder
+                            .Entity(entityType.Name)
+                            .Property(property.Name)
+                            .HasConversion(new DateTimeOffsetToBinaryConverter());
+                    }
+
+                    var decimalProperties = entityType.ClrType.GetProperties().Where(p => p.PropertyType == typeof(decimal) || p.PropertyType == typeof(decimal?));
+                    foreach (var property in decimalProperties)
+                    {
+                        modelBuilder
+                            .Entity(entityType.Name)
+                            .Property(property.Name)
+                            .HasConversion<double>();
+                    }
+                }
+            }
+        }
+
+        private void ValidateEntities()
+        {
+            var modifiedEntries = ChangeTracker.Entries()
+                    .Where(x => (x.State == EntityState.Added || x.State == EntityState.Modified));
+
+            foreach (var entity in modifiedEntries)
+            {
+                if (entity.Entity is ValidatableObject validatableObject)
+                {
+                    var validationResults = validatableObject.Validate();
+                    if (validationResults.Any())
+                    {
+                        throw new ValidationException(entity.Entity.GetType(), validationResults);
+                    }
+                }
+            }
         }
 
         private static void RegisterConvention(ModelBuilder modelBuilder)
@@ -44,6 +106,11 @@ namespace SimplCommerce.Module.Core.Data
                     var tableName = string.Concat(nameParts[2], "_", entity.ClrType.Name);
                     modelBuilder.Entity(entity.Name).ToTable(tableName);
                 }
+            }
+
+            foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            {
+                relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
         }
 

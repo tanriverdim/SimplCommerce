@@ -2,9 +2,8 @@
 (function ($) {
     angular
         .module('simplAdmin.news')
-        .controller('NewsItemFormCtrl', NewsItemFormCtrl);
+        .controller('NewsItemFormCtrl', ['$state', '$stateParams', 'summerNoteService', 'newsItemService', 'newsCategoryService', 'translateService', NewsItemFormCtrl]);
 
-    /* @ngInject */
     function NewsItemFormCtrl($state, $stateParams, summerNoteService, newsItemService, newsCategoryService, translateService) {
         var vm = this;
         vm.translate = translateService;
@@ -13,6 +12,10 @@
         vm.newsItem.newsCategoryIds = [];
         vm.newsItemId = $stateParams.id;
         vm.isEditMode = vm.newsItemId > 0;
+
+        vm.updateSlug = function () {
+            vm.newsItem.slug = slugify(vm.newsItem.name);
+        };
 
         vm.imageUpload = function (files) {
             summerNoteService.upload(files[0])
@@ -23,6 +26,11 @@
 
         vm.save = function save() {
             var promise;
+            // ng-upload will post null as text
+            vm.newsItem.metaTitle = vm.newsItem.metaTitle === null ? '' : vm.newsItem.metaTitle;
+            vm.newsItem.metaKeywords = vm.newsItem.metaKeywords === null ? '' : vm.newsItem.metaKeywords;
+            vm.newsItem.metaDescription = vm.newsItem.metaDescription === null ? '' : vm.newsItem.metaDescription;
+
             if (vm.isEditMode) {
                 promise = newsItemService.editNewsItem(vm.newsItem);
             } else {
@@ -67,7 +75,7 @@
                     vm.newsItem = result.data;
                 });
             }
-            getNewsCategories()
+            getNewsCategories();
         }
 
         init();

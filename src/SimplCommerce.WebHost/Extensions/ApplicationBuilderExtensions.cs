@@ -1,11 +1,19 @@
 ﻿using System;
-using System.Globalization;
+using System.Linq;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Localization;
-using Microsoft.Net.Http.Headers;
-using SimplCommerce.Module.Core.Extensions;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Net.Http.Headers;
+using SimplCommerce.Infrastructure.Data;
+using SimplCommerce.Infrastructure;
+using SimplCommerce.Infrastructure.Localization;
+using SimplCommerce.Module.Localization;
 
 namespace SimplCommerce.WebHost.Extensions
 {
@@ -13,24 +21,31 @@ namespace SimplCommerce.WebHost.Extensions
     {
         public static IApplicationBuilder UseCustomizedIdentity(this IApplicationBuilder app)
         {
-            app.UseAuthentication();
+            app.UseIdentityServer();
+            app.UseWhen(
+                context => context.Request.Path.StartsWithSegments("/api"),
+                a => a.Use(async (context, next) =>
+                {
+                    if (!context.User.Identity.IsAuthenticated) {
+                        var principal = new ClaimsPrincipal();
+
+                        var bearerAuthResult = await context.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
+                        if (bearerAuthResult?.Principal != null)
+                        {
+                            principal.AddIdentities(bearerAuthResult.Principal.Identities);
+                        }
+
+                        context.User = principal;
+                    }
+
+                    await next();
+                }));
+
+            app.UseAuthorization();
             return app;
         }
 
-        public static IApplicationBuilder UseCustomizedMvc(this IApplicationBuilder app)
-        {
-            app.UseMvc(routes =>
-            {
-                routes.Routes.Add(new UrlSlugRoute(routes.DefaultHandler));
-
-                routes.MapRoute(
-                    "default",
-                    "{controller=Home}/{action=Index}/{id?}");
-            });
-            return app;
-        }
-
-        public static IApplicationBuilder UseCustomizedStaticFiles(this IApplicationBuilder app, IHostingEnvironment env)
+        public static IApplicationBuilder UseCustomizedStaticFiles(this IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -69,24 +84,25 @@ namespace SimplCommerce.WebHost.Extensions
 
         public static IApplicationBuilder UseCustomizedRequestLocalization(this IApplicationBuilder app)
         {
-            var supportedCultures = new[]
+            string defaultCultureUI = GlobalConfiguration.DefaultCulture;
+            using (var scope = app.ApplicationServices.CreateScope())
             {
-                new CultureInfo("en-US"),
-                new CultureInfo("vi-VN"),
-                new CultureInfo("fr-FR"),
-                new CultureInfo("pt-BR"),
-                new CultureInfo("uk-UA"),
-                new CultureInfo("ru-RU"),
-                new CultureInfo("ar-TN"),
-                new CultureInfo("ko-KR"),
-                new CultureInfo("tr-TR")
-            };
-            app.UseRequestLocalization(new RequestLocalizationOptions
-            {
-                DefaultRequestCulture = new RequestCulture("vi-VN", "vi-VN"),
-                SupportedCultures = supportedCultures,
-                SupportedUICultures = supportedCultures
-            });
+                var cultureRepository = scope.ServiceProvider.GetRequiredService<IRepositoryWithTypedId<Culture, string>>();
+                GlobalConfiguration.Cultures = cultureRepository.Query().ToList();
+
+                var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+                defaultCultureUI = config.GetValue<string>("Global.DefaultCultureUI");
+            }
+
+            var supportedCultures = GlobalConfiguration.Cultures.Select(c => c.Id).ToArray();
+            app.UseRequestLocalization(options =>
+            options
+                .AddSupportedCultures(supportedCultures)
+                .AddSupportedUICultures(supportedCultures)
+                .SetDefaultCulture(defaultCultureUI ?? GlobalConfiguration.DefaultCulture)
+                .RequestCultureProviders.Insert(0, new EfRequestCultureProvider())
+            );
+
             return app;
         }
     }

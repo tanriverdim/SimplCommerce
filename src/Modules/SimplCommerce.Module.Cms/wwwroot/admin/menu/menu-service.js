@@ -2,9 +2,8 @@
 (function () {
     angular
         .module('simplAdmin.cms')
-        .factory('menuService', menuService);
+        .factory('menuService', ['$http', menuService]);
 
-    /* @ngInject */
     function menuService($http) {
         var service = {
             getMenu: getMenu,
@@ -40,7 +39,7 @@
         }
 
         function addMenuItem(menuId, menuItems) {
-            return $http.post('api/menus/' + menuId + '/add-items', menuItems)
+            return $http.post('api/menus/' + menuId + '/add-items', menuItems);
         }
 
         function deleteMenuItem(menuItemId) {

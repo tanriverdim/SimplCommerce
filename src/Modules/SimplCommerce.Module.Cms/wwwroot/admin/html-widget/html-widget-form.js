@@ -2,9 +2,8 @@
 (function ($) {
     angular
         .module('simplAdmin.cms')
-        .controller('HtmlWidgetFormCtrl', HtmlWidgetFormCtrl);
+        .controller('HtmlWidgetFormCtrl', ['$state', '$stateParams', 'summerNoteService', 'htmlWidgetService', 'translateService', HtmlWidgetFormCtrl]);
 
-    /* @ngInject */
     function HtmlWidgetFormCtrl($state, $stateParams, summerNoteService, htmlWidgetService, translateService) {
         var vm = this;
         vm.translate = translateService;
@@ -15,6 +14,7 @@
 
         vm.datePickerPublishStart = {};
         vm.datePickerPublishEnd = {};
+        vm.numberOfWidgets = [];
 
         vm.openCalendar = function (e, picker) {
             vm[picker].open = true;
@@ -55,6 +55,16 @@
         function init() {
             htmlWidgetService.getWidgetZones().then(function (result) {
                 vm.widgetZones = result.data;
+            });
+
+            htmlWidgetService.getNumberOfWidgets().then(function (result) {
+                var count = parseInt(result.data);
+                if (!vm.isEditMode) {
+                    count = count + 1;
+                }
+
+                for (var i = 1; i <= count; i++)
+                    vm.numberOfWidgets.push(i);
             });
 
             if (vm.isEditMode) {

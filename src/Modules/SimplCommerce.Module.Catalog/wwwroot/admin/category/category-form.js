@@ -2,9 +2,8 @@
 (function () {
     angular
         .module('simplAdmin.catalog')
-        .controller('CategoryFormCtrl', CategoryFormCtrl);
+        .controller('CategoryFormCtrl', ['$q', '$state', '$stateParams', 'categoryService', 'translateService', CategoryFormCtrl]);
 
-    /* @ngInject */
     function CategoryFormCtrl($q, $state, $stateParams, categoryService, translateService) {
         var vm = this,
             tableStateRef;
@@ -15,11 +14,18 @@
         vm.categoryId = $stateParams.id;
         vm.isEditMode = vm.categoryId > 0;
 
+        vm.updateSlug = function () {
+            vm.category.slug = slugify(vm.category.name);
+        };
+
         vm.save = function save() {
             var promise;
             // ng-upload will post null as text
             vm.category.parentId = vm.category.parentId === null ? '' : vm.category.parentId;
             vm.category.description = vm.category.description === null ? '' : vm.category.description;
+            vm.category.metaTitle = vm.category.metaTitle === null ? '' : vm.category.metaTitle;
+            vm.category.metaKeywords = vm.category.metaKeywords === null ? '' : vm.category.metaKeywords;
+            vm.category.metaDescription = vm.category.metaDescription === null ? '' : vm.category.metaDescription;
 
             if (vm.isEditMode) {
                 promise = categoryService.editCategory(vm.category);
@@ -62,20 +68,20 @@
             product.isEditing = true;
             product.editingIsFeaturedProduct = product.isFeaturedProduct;
             product.editingDisplayOrder = product.displayOrder;
-        }
+        };
 
         vm.saveProduct = function saveProduct(product) {
             var productCategory = {
-                'id' : product.id,
-                'isFeaturedProduct' : product.editingIsFeaturedProduct,
-                'displayOrder' : product.displayOrder
+                'id': product.id,
+                'isFeaturedProduct': product.editingIsFeaturedProduct,
+                'displayOrder': product.displayOrder
             };
             categoryService.saveProduct(productCategory).then(function () {
                 product.isEditing = false;
                 product.isFeaturedProduct = product.editingIsFeaturedProduct;
                 product.displayOrder = product.editingDisplayOrder;
             });
-        }
+        };
 
         function init() {
             if (vm.isEditMode) {

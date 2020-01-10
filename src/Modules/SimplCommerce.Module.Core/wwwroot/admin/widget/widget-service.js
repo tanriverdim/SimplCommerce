@@ -2,15 +2,13 @@
 (function () {
     angular
         .module('simplAdmin.core')
-        .factory('widgetService', widgetService);
+        .factory('widgetService', ['$http', widgetService]);
 
-    /* @ngInject */
-    function widgetService($http, Upload) {
+    function widgetService($http) {
         var service = {
             getWidgets: getWidgets,
             getWidgetInstances: getWidgetInstances,
-            deleteWidgetInstance: deleteWidgetInstance,
-            
+            deleteWidgetInstance: deleteWidgetInstance
         };
         return service;
 
@@ -23,7 +21,7 @@
         }
 
         function deleteWidgetInstance(id) {
-            return $http.delete('api/widget-instances/' + id)
+            return $http.delete('api/widget-instances/' + id);
         }
     }
 })();

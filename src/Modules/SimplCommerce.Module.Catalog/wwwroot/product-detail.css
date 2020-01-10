@@ -136,24 +136,19 @@
     font-size: 18px;
 }
 
-.product-detail .add-to-wishlist {
+.product-detail .add-to-lists {
     padding-bottom: 10px;
     border-bottom: 1px solid #dedede;
     margin-top: 40px;
 }
 
-.product-detail .add-to-wishlist li {
+.product-detail .add-to-lists li {
     padding-left: 20px;
     margin-right: 10px;
     border-left: 1px solid #dedede;
 }
 
-.product-detail .add-to-wishlist li:first-child {
-    padding-left: 0;
-    border-left: none;
-}
-
-.add-to-wishlist i {
+.add-to-lists i {
     color: #8bdccd;
     font-size: 16px;
     margin-right: 7px;
@@ -182,15 +177,19 @@
 }
 
 .rating-item .progress {
-    width: 180px;
+    width: 175px;
     display: inline-block;
     height: 17px;
     vertical-align: middle;
     margin: 0;
 }
 
-#addreview {
-    border-left: solid 1px #e2e2e2;
+    .rating-item .progress-bar{
+        height: 100%;
+    }
+
+#reviews .review-star {
+    margin-left: -7px;
 }
 
 #addreview input, #addreview textarea {
@@ -208,4 +207,16 @@
 
 .review-item-list .review-title {
     font-weight: 700;
+}
+
+.review-replies {
+    margin-left: 35px;
+}
+
+.form-add-review-reply textarea {
+    max-width: 100%;
+}
+
+.btn-add-review-reply {
+    vertical-align: baseline;
 }

@@ -20,6 +20,11 @@
                     templateUrl: 'modules/cms/admin/page/page-form.html',
                     controller: 'PageFormCtrl as vm'
                 })
+                .state('page-translation', {
+                    url: '/page-translation/:id/:culture',
+                    templateUrl: 'modules/cms/admin/page/page-translation-form.html',
+                    controller: 'PageTranslationFormCtrl as vm'
+                })
                 .state('menus', {
                     url: '/menus/',
                     templateUrl: 'modules/cms/admin/menu/menu-list.html',
@@ -54,6 +59,16 @@
                     url: '/widget-html/edit/:id',
                     templateUrl: 'modules/cms/admin/html-widget/html-widget-form.html',
                     controller: 'HtmlWidgetFormCtrl as vm'
+                })
+                .state('widget-spacebar-create', {
+                    url: '/widget-spacebar/create',
+                    templateUrl: 'modules/cms/admin/spacebar-widget/spacebar-widget-form.html',
+                    controller: 'SpaceBarWidgetFormCtrl as vm'
+                })
+                .state('widget-spacebar-edit', {
+                    url: '/widget-spacebar/edit/:id',
+                    templateUrl: 'modules/cms/admin/spacebar-widget/spacebar-widget-form.html',
+                    controller: 'SpaceBarWidgetFormCtrl as vm'
                 });
         }]);
 })();

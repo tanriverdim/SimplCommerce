@@ -2,9 +2,8 @@
 (function ($) {
     angular
         .module('simplAdmin.cms')
-        .controller('MenuFormCtrl', MenuFormCtrl);
+        .controller('MenuFormCtrl', ['$state', '$stateParams', 'menuService', 'translateService', MenuFormCtrl]);
 
-    /* @ngInject */
     function MenuFormCtrl($state, $stateParams, menuService, translateService) {
         var vm = this;
         vm.translate = translateService;
@@ -18,24 +17,27 @@
         vm.addingCustomLink = {};
 
         vm.toggleEntity = function toggleEntity(entity) {
-            var entityIds = vm.selectedEntities.map(function (item) { return item.id });
+            var entityIds = vm.selectedEntities.map(function (item) { return item.id; });
             var index = entityIds.indexOf(entity.id);
             if (index > -1) {
                 vm.selectedEntities.splice(index, 1);
             } else {
                 vm.selectedEntities.push(entity);
             }
+            entity.isChecked = true;
         };
 
         vm.addMenuItems = function () {
             var menuItems = vm.selectedEntities.map(function (item) {
-                return { entityId : item.id, name : item.name }
+                return { entityId: item.id, name: item.name };
             });
             menuService.addMenuItem(vm.menuId, menuItems).then(function (result) {
                 result.data.forEach(function (item) {
                     item.children = [];
                     vm.menuItemTree.push(item);
                 });
+                vm.selectedEntities = [];
+                uncheckAllMenuItems();
             });
         };
 
@@ -49,7 +51,7 @@
                     vm.addingCustomLink = {};
                 });
             });
-        }
+        };
 
         vm.remove = function (scope) {
            scope.remove();
@@ -62,6 +64,7 @@
         vm.save = function save() {
             var promise;
             vm.menu.items = treeToArray(vm.menuItemTree);
+
             if (vm.isEditMode) {
                 promise = menuService.editMenu(vm.menu);
             } else {
@@ -86,13 +89,14 @@
         };
 
         function arrayToTree(arr) {
-            var map = {}, node, roots = [];
+            var i, node,
+                map = {}, roots = [];
             // use map to look-up the parents
-            for (var i = 0; i < arr.length; i += 1) {
+            for (i = 0; i < arr.length; i += 1) {
                 map[arr[i].id] = i;
             }
 
-            for (var i = 0; i < arr.length; i += 1) {
+            for (i = 0; i < arr.length; i += 1) {
                 node = arr[i];
                 if (node.parentId) {
                     arr[map[node.parentId]].children.push(node);
@@ -107,12 +111,13 @@
         function treeToArray(tree) {
             var items = [];
             function readNodes(nodes, parentNode) {
-                nodes.forEach(function (node) {
+                nodes.forEach(function (node, i) {
                     var parentId = (parentNode) ? parentNode.id : "";
-                    var item = { id: node.id, name: node.name, entityId: node.entityId, customLink: node.customLink, parentId: parentId };
+                    var displayOrder = i;
+                    var item = { id: node.id, name: node.name, entityId: node.entityId, customLink: node.customLink, parentId: parentId, displayOrder: displayOrder };
                     items.push(item);
                     if (node.children.length > 0) {
-                        readNodes(node.children, node)
+                        readNodes(node.children, node);
                     }
                 });
             }
@@ -120,9 +125,16 @@
             return items;
         }
 
+	function uncheckAllMenuItems() {
+            vm.entities.forEach(function (entity) {
+                entity.isChecked = false;
+            });
+        }
+		
         function init() {
             menuService.getEntities().then(function (result) {
                 vm.entities = result.data;
+                uncheckAllMenuItems();
             });
 
             menuService.getEntityTypes().then(function (result) {
@@ -132,7 +144,7 @@
             if (vm.isEditMode) {
                 menuService.getMenu(vm.menuId).then(function (result) {
                     vm.menu = result.data;
-                    vm.menu.items.forEach(function (item) { item.children = [] });
+                    vm.menu.items.forEach(function (item) { item.children = []; });
                     vm.menuItemTree = arrayToTree(vm.menu.items);
                 });
             }

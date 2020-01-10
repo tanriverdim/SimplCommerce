@@ -2,9 +2,8 @@
 (function () {
     angular
         .module('simplAdmin.catalog')
-        .factory('categoryWidgetService', categoryWidgetService);
+        .factory('categoryWidgetService', ['$http', categoryWidgetService]);
 
-    /* @ngInject */
     function categoryWidgetService($http) {
         var service = {
             getWidgetZones: getWidgetZones,
@@ -12,6 +11,7 @@
             getCategoryWidget: getCategoryWidget,
             createCategoryWidget: createCategoryWidget,
             editCategoryWidget: editCategoryWidget,
+            getNumberOfWidgets: getNumberOfWidgets
         };
         return service;
 
@@ -33,6 +33,10 @@
 
         function getCategories() {
             return $http.get('api/categories');
+        }
+
+        function getNumberOfWidgets() {
+            return $http.get('api/widget-instances/number-of-widgets');
         }
     }
 })();
